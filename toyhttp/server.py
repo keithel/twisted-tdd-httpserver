@@ -5,8 +5,9 @@ This implementation does not support persistent connections, chunked encoding,
 multiple headers with same key, multi-line headers, etc..
 """
 
-from twisted.internet import protocol
+from twisted import internet
 from twisted.protocols import basic
+from twisted.internet.protocol import ServerFactory
 class HTTP(basic.LineReceiver):
     """
     A toy implementation of the server-side HTTP protocol.
@@ -15,14 +16,11 @@ class HTTP(basic.LineReceiver):
     and writes out HTTP responses.
     """
 
-    def __init__(self, handler, reactor, *args, **kwargs):
+    def __init__(self, handler, reactor=internet.reactor, *args, **kwargs):
         # save off handler function to call in requestReceived.
         self._handler = handler
         self.reactor = reactor
         self.lines = []
-
-#    def makeConnection(self, transport):
-#        pass
 
     def lineReceived(self, line):
         if line == "":
@@ -63,12 +61,16 @@ class Response(object):
         self.body = body
         self.headers = headers
 
-class HTTPFactory(object):
+class HTTPFactory(ServerFactory):
     """
     A factory for HTTP servers.
 
     This will create instances of the HTTP class.
     """
 
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, handler, *args, **kwargs):
+        self._handler = handler
+
+    def buildProtocol(self, arg):
+        return HTTP(self._handler)
+
