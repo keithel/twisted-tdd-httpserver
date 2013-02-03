@@ -52,16 +52,26 @@ class HTTP(basic.LineReceiver):
         self.transport.loseConnection()
 
     def requestReceived(self, method, path, headers, foo):
+        def internalServerError(e):
+            twisted.python.log.err("Internal Server Error received: %s" % str(e))
+            twisted.python.log.err(e)
+            self._writeResponse(Response(500, "Internal Server Error", {}))
+
+        def deferredCallback(response):
+            try:
+                response.code
+                self._writeResponse(response)
+            except Exception,e:
+                internalServerError(e)
+
         try:
             handlerResult = self._handler(method, path, headers, foo)
             if isinstance(handlerResult, Deferred):
-                handlerResult.addCallback(self._writeResponse)
+                handlerResult.addCallback(deferredCallback)
             else:
                 self._writeResponse(handlerResult)
         except RuntimeError,e:
-            twisted.python.log.err("Internal Server Error received: %s" % str(e) )
-            twisted.python.log.err(e)
-            self._writeResponse(Response(500, "Internal Server Error", {}))
+            internalServerError(e)
 
     def badRequestReceived(self):
         self._writeResponse(Response(400, "", {}))
