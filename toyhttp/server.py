@@ -5,7 +5,7 @@ This implementation does not support persistent connections, chunked encoding,
 multiple headers with same key, multi-line headers, etc..
 """
 
-from twisted import internet
+import twisted
 from twisted.protocols import basic
 from twisted.internet.protocol import ServerFactory
 class HTTP(basic.LineReceiver):
@@ -16,7 +16,7 @@ class HTTP(basic.LineReceiver):
     and writes out HTTP responses.
     """
 
-    def __init__(self, handler, reactor=internet.reactor, *args, **kwargs):
+    def __init__(self, handler, reactor=twisted.internet.reactor, *args, **kwargs):
         # save off handler function to call in requestReceived.
         self._handler = handler
         self.reactor = reactor
@@ -30,7 +30,10 @@ class HTTP(basic.LineReceiver):
                 tokens = [x.strip() for x in hline.split(":")]
                 headers[tokens[0]] = tokens[1]
 
-            self.requestReceived(line0Tokens[0], line0Tokens[1], headers, "")
+            if len(line0Tokens) == 3 and line0Tokens[2] == "HTTP/1.1":
+                self.requestReceived(line0Tokens[0], line0Tokens[1], headers, "")
+            else:
+                self.badRequestReceived()
             self.lines = []
         else:
             self.lines.append(line)
@@ -46,7 +49,15 @@ class HTTP(basic.LineReceiver):
         self.transport.loseConnection()
 
     def requestReceived(self, method, path, headers, foo):
-        self._writeResponse(self._handler(method, path, headers, foo))
+        try:
+            self._writeResponse(self._handler(method, path, headers, foo))
+        except Exception,e:
+            twisted.python.log.err("Internal Server Error received: %s" % str(e) )
+            twisted.python.log.err(e)
+            self._writeResponse(Response(500, "Internal Server Error", {}))
+
+    def badRequestReceived(self):
+        self._writeResponse(Response(400, "", {}))
 
 
 class Response(object):
