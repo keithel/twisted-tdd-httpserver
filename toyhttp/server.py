@@ -8,6 +8,7 @@ multiple headers with same key, multi-line headers, etc..
 import twisted
 from twisted.protocols import basic
 from twisted.internet.protocol import ServerFactory
+from twisted.internet.defer import Deferred
 class HTTP(basic.LineReceiver):
     """
     A toy implementation of the server-side HTTP protocol.
@@ -50,8 +51,12 @@ class HTTP(basic.LineReceiver):
 
     def requestReceived(self, method, path, headers, foo):
         try:
-            self._writeResponse(self._handler(method, path, headers, foo))
-        except Exception,e:
+            handlerResult = self._handler(method, path, headers, foo)
+            if isinstance(handlerResult, Deferred):
+                handlerResult.addCallback(self._writeResponse)
+            else:
+                self._writeResponse(handlerResult)
+        except RuntimeError,e:
             twisted.python.log.err("Internal Server Error received: %s" % str(e) )
             twisted.python.log.err(e)
             self._writeResponse(Response(500, "Internal Server Error", {}))
