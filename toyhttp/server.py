@@ -6,7 +6,8 @@ multiple headers with same key, multi-line headers, etc..
 """
 
 from twisted.internet import protocol
-class HTTP(protocol.Protocol):
+from twisted.protocols import basic
+class HTTP(basic.LineReceiver):
     """
     A toy implementation of the server-side HTTP protocol.
 
@@ -18,12 +19,23 @@ class HTTP(protocol.Protocol):
         # save off handler function to call in requestReceived.
         self._handler = handler
         self.reactor = reactor
+        self.lines = []
 
 #    def makeConnection(self, transport):
 #        pass
 
-    def dataReceived(self, bytes):
-        self.requestReceived("GET", "/foo/bar", {'Another':'thing', 'Key': 'val ue'}, "")
+    def lineReceived(self, line):
+        if line == "":
+            line0Tokens = self.lines[0].split()
+            headers = dict()
+            for hline in self.lines[1:]:
+                tokens = [x.strip() for x in hline.split(":")]
+                headers[tokens[0]] = tokens[1]
+
+            self.requestReceived(line0Tokens[0], line0Tokens[1], headers, "")
+            self.lines = []
+        else:
+            self.lines.append(line)
 
     def _writeResponse(self, response):
         self.transport.write("HTTP/1.1 %d Reason\r\n"
