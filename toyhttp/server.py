@@ -68,6 +68,7 @@ class HTTP(basic.LineReceiver):
             handlerResult = self._handler(method, path, headers, foo)
             if isinstance(handlerResult, Deferred):
                 handlerResult.addCallback(deferredCallback)
+                handlerResult.addErrback(internalServerError)
             else:
                 self._writeResponse(handlerResult)
         except RuntimeError,e:
