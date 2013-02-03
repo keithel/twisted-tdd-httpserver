@@ -46,7 +46,7 @@ def resolve(parsedPath):
     defer.returnValue(renderResult(message, hostname))
 
 
-def dnsResolver(method, path, headers):
+def dnsResolver(method, path, headers, body):
     """
     A HTTP handler that does DNS lookups.
     """
@@ -60,6 +60,7 @@ def dnsResolver(method, path, headers):
 
 
 if __name__ == '__main__':
+    print "Point your browser at http://localhost:8080/"
     log.startLogging(sys.stdout)
     reactor.listenTCP(8080, server.HTTPFactory(dnsResolver))
     reactor.run()

@@ -22,8 +22,11 @@ class Handler(object):
     def __init__(self):
         self.counter = 0
 
-    def __call__(self, method, path, headers):
-        result = "You requested %r with method %r.\n\n"  % (path, method)
+    def __call__(self, method, path, headers, body):
+        log.msg("Received request for %r." % (path,))
+        self.counter += 1
+        result = "This is request number %d.\n" % (self.counter,)
+        result += "You requested %r with method %r.\n\n"  % (path, method)
         result += "Your headers:\n"
         for header in headers:
             result += header + "\n"
@@ -32,6 +35,7 @@ class Handler(object):
 
 
 if __name__ == '__main__':
+    print "Point your browser at http://localhost:8080/"
     log.startLogging(sys.stdout)
     reactor.listenTCP(8080, server.HTTPFactory(Handler()))
     reactor.run()

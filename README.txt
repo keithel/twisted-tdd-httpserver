@@ -8,7 +8,7 @@ You can run the tests using the trial command-line tool:
 
 Or you can run an individual test:
 
-    $ trial toyhttp.tests.test_server.Tests01_Protocol.test_01_receiveRequest
+    $ trial toyhttp.tests.test_server.Tests01_Protocol.test_01_writeResponse
 
 On Windows you'd run trial like this, in CMD.EXE:
 

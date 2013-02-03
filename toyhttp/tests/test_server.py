@@ -5,6 +5,7 @@ Tests for toyhttp.server.
 from twisted.trial.unittest import TestCase
 from twisted.test.proto_helpers import StringTransport
 from twisted.internet import defer, reactor, task
+from twisted.internet.protocol import ServerFactory, Protocol
 
 from toyhttp.server import HTTP, HTTPFactory, Response
 
@@ -47,6 +48,7 @@ class Tests01_Protocol(TestCase, ResponseMixin):
         content-length header, and additional headers (as a dictionary mapping
         keys to values).
         """
+        self.assertTrue(issubclass(HTTP, Protocol))
         protocol = HTTP(None, reactor=task.Clock())
         # Connect a fake, in-memory transport to the protocol:
         transport = AbortableTransport()
@@ -83,7 +85,7 @@ class Tests01_Protocol(TestCase, ResponseMixin):
         response = []
         protocol._writeResponse = lambda r: response.append(r)
 
-        # Handler is stored as attribute as protocol:
+        # Handler is stored as an attribute of the protocol:
         self.assertIdentical(protocol._handler, handler)
         # requestReceived calls handler, and then takes the results and passes
         # it to _writeResponse:
@@ -127,13 +129,19 @@ class Tests01_Protocol(TestCase, ResponseMixin):
         """
         L{HTTP.requestReceived} is only called after C{dataReceived} gets the
         final line with just '\r\n'.
+
+        (Network connections may not deliver the full request in a single
+        dataReceived() call, so the protocol will need to implement a state
+        machine tracking where it is in the process of parsing the HTTP
+        request.)
         """
         protocol = HTTP(None, reactor=task.Clock())
         received = []
         protocol.requestReceived = lambda *args: received.append(args)
 
         protocol.makeConnection(AbortableTransport())
-        protocol.dataReceived("HEAD /?x=y HTTP/1.1\r\n")
+        protocol.dataReceived("HEAD /?x=y HTTP/")
+        protocol.dataReceived("1.1\r\n")
         self.assertEqual(received, [])
         protocol.dataReceived("\r\n")
         self.assertEqual(received, [("HEAD", "/?x=y", {}, "")])
@@ -150,6 +158,7 @@ class Tests02_Factory(TestCase):
         constructed with the function passed as an argument to
         L{HTTPFactory.__init__}.
         """
+        self.assertTrue(issubclass(HTTPFactory, ServerFactory))
         handler = lambda *args: None
         factory = HTTPFactory(handler)
         protocol = factory.buildProtocol(None)
