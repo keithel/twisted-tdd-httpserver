@@ -27,14 +27,14 @@ class HTTP(basic.LineReceiver):
     def lineReceived(self, line):
         if line == "":
             #print "Lines received: " + str(self.lines)
-            line0Tokens = self.lines[0].split()
+            l0Toks = self.lines[0].split()
             headers = dict()
             for hline in self.lines[1:]:
                 tokens = [x.strip() for x in hline.split(":")]
                 headers[tokens[0]] = tokens[1]
 
-            if len(line0Tokens) == 3 and re.match("HTTP/\d\.\d", line0Tokens[2]) != None:
-                self.requestReceived(line0Tokens[0], line0Tokens[1], headers, "")
+            if len(l0Toks) == 3 and re.match("HTTP/\d\.\d", l0Toks[2]) != None:
+                self.requestReceived(l0Toks[0], l0Toks[1], headers, "")
             else:
                 self.badRequestReceived()
             self.lines = []
