@@ -24,6 +24,10 @@ class HTTP(basic.LineReceiver):
         self.reactor = reactor
         self.lines = []
 
+    def makeConnection(self, transport):
+        basic.LineReceiver.makeConnection(self, transport)
+        self.abortAfter60 = self.reactor.callLater(60, self.transport.abortConnection)
+
     def lineReceived(self, line):
         if line == "":
             #print "Lines received: " + str(self.lines)
@@ -44,7 +48,7 @@ class HTTP(basic.LineReceiver):
     def _writeResponse(self, response):
         self.transport.write("HTTP/1.1 %d Reason\r\n"
                              "Content-Length: %d\r\n"
-                             "content-type: text/plain\r\n"
+                             "content-type: text/html\r\n"
                              "\r\n"
                              "%s" % 
                              (response.code, len(response.body),
@@ -63,6 +67,10 @@ class HTTP(basic.LineReceiver):
                 self._writeResponse(response)
             except Exception,e:
                 internalServerError(e)
+
+        # We have a full request now, cancel the 60 second abort.
+        try: self.abortAfter60.cancel()
+        except: pass
 
         try:
             handlerResult = self._handler(method, path, headers, foo)
