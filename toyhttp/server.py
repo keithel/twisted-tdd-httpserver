@@ -46,6 +46,8 @@ class HTTP(basic.LineReceiver):
             self.lines.append(line)
 
     def _writeResponse(self, response):
+        with open('response', 'w') as f:
+            f.write(str(response))
         self.transport.write(str(response))
 #        self.transport.write("HTTP/1.1 %d Reason\r\n"
 #                             "Content-Length: %d\r\n"
@@ -74,6 +76,10 @@ class HTTP(basic.LineReceiver):
         except: pass
 
         try:
+            with open('afile', 'w') as f:
+                # twisted.python.log.err("headers: %s" % headers)
+                f.write("headers: %s\r\n" % headers)
+
             handlerResult = self._handler(method, path, headers, foo)
             if isinstance(handlerResult, Deferred):
                 handlerResult.addCallback(deferredCallback)
