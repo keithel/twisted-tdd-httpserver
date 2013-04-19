@@ -46,13 +46,14 @@ class HTTP(basic.LineReceiver):
             self.lines.append(line)
 
     def _writeResponse(self, response):
-        self.transport.write("HTTP/1.1 %d Reason\r\n"
-                             "Content-Length: %d\r\n"
-                             "content-type: text/html\r\n"
-                             "\r\n"
-                             "%s" % 
-                             (response.code, len(response.body),
-                              response.body))
+        self.transport.write(str(response))
+#        self.transport.write("HTTP/1.1 %d Reason\r\n"
+#                             "Content-Length: %d\r\n"
+#                             "content-type: text/html\r\n"
+#                             "\r\n"
+#                             "%s" % 
+#                             (response.code, len(response.body),
+#                              response.body))
         self.transport.loseConnection()
 
     def requestReceived(self, method, path, headers, foo):
@@ -97,6 +98,13 @@ class Response(object):
         self.code = statusCode
         self.body = body
         self.headers = headers
+
+    def __repr__(self):
+        return ("HTTP/1.1 %d Reason\r\n"
+                "Content-Length: %d\r\n"
+                "content-type: text/html\r\n"
+                "\r\n"
+                "%s" % (self.code, len(self.body), self.body))
 
 class HTTPFactory(ServerFactory):
     """
