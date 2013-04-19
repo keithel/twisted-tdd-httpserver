@@ -100,11 +100,17 @@ class Response(object):
         self.headers = headers
 
     def __repr__(self):
+        sortedHeaders = self.headers.items()
+        sortedHeaders.sort()
+        headersStr = "\r\n".join("{0}: {1}".format(key, value) for key, value in sortedHeaders)
+        if len(headersStr) > 0:
+            headersStr = "%s\r\n" % headersStr
+
         return ("HTTP/1.1 %d Reason\r\n"
                 "Content-Length: %d\r\n"
-                "content-type: text/html\r\n"
+                "%s"
                 "\r\n"
-                "%s" % (self.code, len(self.body), self.body))
+                "%s" % (self.code, len(self.body), headersStr, self.body))
 
 class HTTPFactory(ServerFactory):
     """
